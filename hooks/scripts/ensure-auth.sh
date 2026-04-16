@@ -4,8 +4,13 @@
 # Non-blocking, read-only check: emits a friendly hint to stderr if the user
 # has not yet authenticated. Never fails the session start. Never opens a
 # browser on its own — that would be surprising behavior during session boot.
+#
+# Intentionally does NOT use `set -e` / `pipefail` — an unexpected non-zero
+# from any internal command must never propagate to the hook runner. All
+# exit paths are explicit `exit 0`. Only `set -u` is kept, and every env-var
+# reference uses `${VAR:-}` defaults so -u cannot trip on an unset variable.
 
-set -euo pipefail
+set -u
 
 CREDENTIALS_FILE="${HOME}/.config/ga-mcp/credentials.json"
 CLIENT_SECRETS_FILE="${HOME}/.config/ga-mcp/client_secrets.json"

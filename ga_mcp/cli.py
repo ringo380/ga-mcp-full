@@ -49,7 +49,11 @@ def _handle_auth(args: list[str]) -> None:
                 client_id = arg.split("=", 1)[1]
             elif arg.startswith("--client-secret="):
                 client_secret = arg.split("=", 1)[1]
-        run_oauth_flow(client_id=client_id, client_secret=client_secret)
+        try:
+            run_oauth_flow(client_id=client_id, client_secret=client_secret)
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            sys.exit(1)
 
     elif args[0] == "logout":
         clear_credentials()

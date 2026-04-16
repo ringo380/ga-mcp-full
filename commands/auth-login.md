@@ -27,7 +27,7 @@ After this runs once, subsequent Claude Code sessions use the cached refresh tok
    ga-mcp-full auth login
    ```
 
-2. Report the result to the user. If the command fails with a `ValueError` about missing OAuth credentials, point them at `/ga-mcp-full:setup` so they can configure their OAuth client first.
+2. Report the result to the user. If the command exits non-zero with an error message containing `OAuth client credentials not found`, point them at `/ga-mcp-full:setup` so they can configure their OAuth client first.
 
 3. If the browser does not open automatically, the command prints a URL to stderr — surface that URL to the user so they can open it manually.
 

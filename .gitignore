@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+.env
+.python-version
+
+# macOS
+.DS_Store
+
+# Claude Code personal config (never commit)
+CLAUDE.md
+**/CLAUDE.md
+.claude/
+memory/
+.browser-pilot/

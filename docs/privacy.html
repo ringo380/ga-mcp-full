@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy — ga-mcp-full</title>
+  <meta name="description" content="Privacy policy for ga-mcp-full: local-only OAuth token storage, no server-side data collection, Google Analytics data handled on user's own machine.">
+  <link rel="canonical" href="https://ringo380.github.io/ga-mcp-full/privacy.html">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --card: #161b22;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #ffffff;
+        --fg: #1f2328;
+        --muted: #59636e;
+        --border: #d1d9e0;
+        --accent: #0969da;
+        --card: #f6f8fa;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+    h1 {
+      font-size: 2rem;
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    h2 {
+      font-size: 1.2rem;
+      margin: 2rem 0 0.5rem;
+      letter-spacing: -0.01em;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.3rem;
+    }
+    .meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0 0 2rem;
+    }
+    p { margin: 0.75rem 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1em 0.35em;
+    }
+    ul { padding-left: 1.5rem; }
+    li { margin: 0.35rem 0; }
+    .back {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a class="back" href="./">&larr; ga-mcp-full</a>
+    <h1>Privacy Policy</h1>
+    <p class="meta">
+      Last updated: 2026-04-17 &middot;
+      <a href="https://github.com/ringo380/ga-mcp-full">Source</a> &middot;
+      Contact: <a href="mailto:ringo380@gmail.com">ringo380@gmail.com</a>
+    </p>
+
+    <h2>What ga-mcp-full is</h2>
+    <p>
+      <code>ga-mcp-full</code> is an open-source <a href="https://modelcontextprotocol.io/">Model Context Protocol (MCP)</a> server that exposes Google Analytics 4 Admin API and Data API endpoints as tools for AI assistants such as Claude Code, Claude Desktop, and Cursor. It runs entirely on the end user's own machine (stdio transport). There is no hosted backend operated by the project maintainers.
+    </p>
+
+    <h2>What data is accessed</h2>
+    <p>
+      When you authenticate, <code>ga-mcp-full</code> is granted the <code>https://www.googleapis.com/auth/analytics.edit</code> OAuth scope. This allows the tool to:
+    </p>
+    <ul>
+      <li>Read property-, data-stream-, and account-level configuration of your GA4 properties.</li>
+      <li>Read report data, realtime data, and metadata from your GA4 properties.</li>
+      <li>Create, update, and delete property-level resources you explicitly request: custom dimensions, custom metrics, key events, audiences, data streams, Firebase/BigQuery/Google Ads links, and measurement protocol secrets.</li>
+    </ul>
+    <p>
+      All access is on-demand and initiated by the user of the AI assistant. The tool does not perform background access.
+    </p>
+
+    <h2>Where data is stored</h2>
+    <ul>
+      <li><strong>OAuth credentials</strong> (access + refresh tokens) are cached locally at <code>~/.config/ga-mcp/credentials.json</code> on the end user's own machine, with file permissions <code>0600</code> (user-read/write only). They are never transmitted to the project maintainers or any third party.</li>
+      <li><strong>Google Analytics data</strong> (reports, configuration) retrieved through the tool is passed directly from Google's API to the local MCP client and then to the AI assistant you are using. <code>ga-mcp-full</code> itself does not log, retain, or redistribute this data.</li>
+      <li><strong>No server-side storage.</strong> The project maintainers do not operate any hosted service that receives your data or credentials. The shared OAuth client ID + secret bundled with the tool exist only to identify the software to Google's OAuth servers; they do not route traffic through any third-party server.</li>
+    </ul>
+
+    <h2>What is transmitted</h2>
+    <ul>
+      <li><strong>To Google:</strong> OAuth authorization requests and GA4 Admin/Data API requests, originating from your local machine, using the credentials you granted at consent time.</li>
+      <li><strong>To your AI assistant:</strong> tool results (API responses) returned through the MCP stdio transport on your local machine.</li>
+      <li><strong>To the project maintainers:</strong> nothing. There is no telemetry, analytics, crash reporting, or usage tracking built into the tool.</li>
+    </ul>
+
+    <h2>Third-party services</h2>
+    <ul>
+      <li><strong>Google</strong> handles your OAuth consent, token issuance, and GA4 API requests. Google's privacy policy governs their processing of this data: <a href="https://policies.google.com/privacy">policies.google.com/privacy</a></li>
+      <li><strong>Your AI assistant vendor</strong> (e.g., Anthropic for Claude Code) handles the AI-assistant side. Their privacy policy governs tool-result handling.</li>
+    </ul>
+    <p>
+      <code>ga-mcp-full</code> itself is an intermediary that runs on your machine and does not introduce additional data-collection relationships.
+    </p>
+
+    <h2>Why the <code>analytics.edit</code> scope</h2>
+    <p>
+      The tool exposes ~30 GA4 Admin and Data API operations, including administrative ones (create/update custom dimensions, audiences, key events, and so on). Google's OAuth scope model does not offer a finer-grained "write-certain-things-only" alternative below <code>analytics.edit</code>, so the broader scope is requested to make the full tool set available. Users who only need read access may prefer to set up their own OAuth client with the <code>analytics.readonly</code> scope via the environment-variable override documented in the project README.
+    </p>
+
+    <h2>Credential revocation</h2>
+    <p>
+      To revoke <code>ga-mcp-full</code>'s access at any time:
+    </p>
+    <ol>
+      <li>Run <code>/ga-mcp-full:auth-logout</code> in Claude Code (or <code>ga-mcp-full auth logout</code> at the shell) to delete the local token cache.</li>
+      <li>Visit <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a> and remove "ga-mcp-full" from the list of apps with access to your account.</li>
+    </ol>
+    <p>
+      Either step alone is sufficient to end future access; both are recommended for defense in depth.
+    </p>
+
+    <h2>Changes to this policy</h2>
+    <p>
+      Changes are made by commit to <a href="https://github.com/ringo380/ga-mcp-full/blob/main/PRIVACY.md">PRIVACY.md</a> in the source repository; this page is rendered from that canonical source. The "Last updated" date at the top reflects the most recent substantive change.
+    </p>
+
+    <h2>Questions</h2>
+    <p>
+      Email <a href="mailto:ringo380@gmail.com">ringo380@gmail.com</a> or open an issue at <a href="https://github.com/ringo380/ga-mcp-full/issues">github.com/ringo380/ga-mcp-full/issues</a>.
+    </p>
+  </div>
+</body>
+</html>

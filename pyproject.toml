@@ -20,8 +20,8 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
 ]
 dependencies = [
-    "google-analytics-data==0.20.0",
-    "google-analytics-admin==0.27.0",
+    "google-analytics-data==0.21.0",
+    "google-analytics-admin==0.28.0",
     "google-auth~=2.40",
     "google-auth-oauthlib~=1.2",
     "mcp>=1.24.0",

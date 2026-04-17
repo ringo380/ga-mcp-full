@@ -4,13 +4,12 @@ description = "GA4 MCP server with full Admin API read/write access"
 readme = "README.md"
 version = "0.3.0"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Ryan Robson" }]
 keywords = ["google-analytics", "ga4", "mcp", "claude-code", "analytics"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",

@@ -14,7 +14,7 @@ updates:
       - dependencies
       - python
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "chore"
       include: scope
     reviewers:
       - ringo380
@@ -56,7 +56,7 @@ updates:
       - dependencies
       - github-actions
     commit-message:
-      prefix: "ci(deps)"
+      prefix: "ci"
       include: scope
     reviewers:
       - ringo380

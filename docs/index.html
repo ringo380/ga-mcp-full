@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ga-mcp-full — Google Analytics 4 for AI assistants</title>
+  <meta name="description" content="ga-mcp-full is an open-source Model Context Protocol (MCP) server that exposes the full Google Analytics 4 Admin and Data APIs to Claude Code, Claude Desktop, Cursor, and other MCP-compatible AI assistants.">
+  <meta property="og:title" content="ga-mcp-full">
+  <meta property="og:description" content="Google Analytics 4 MCP server for AI assistants.">
+  <meta property="og:url" content="https://ringo380.github.io/ga-mcp-full/">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://ringo380.github.io/ga-mcp-full/">
+  <!-- Google Search Console domain verification — meta tag added here after you generate it in Search Console. -->
+  <!-- GOOGLE_VERIFICATION_PLACEHOLDER -->
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --card: #161b22;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #ffffff;
+        --fg: #1f2328;
+        --muted: #59636e;
+        --border: #d1d9e0;
+        --accent: #0969da;
+        --card: #f6f8fa;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+    h1 {
+      font-size: 2.25rem;
+      margin: 0 0 0.25rem;
+      letter-spacing: -0.02em;
+    }
+    h2 {
+      font-size: 1.35rem;
+      margin: 2.5rem 0 0.75rem;
+      letter-spacing: -0.01em;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.35rem;
+    }
+    p { margin: 0.75rem 0; }
+    .tagline {
+      color: var(--muted);
+      font-size: 1.1rem;
+      margin: 0 0 2rem;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, pre {
+      font-family: var(--mono);
+      font-size: 0.92em;
+    }
+    code {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1em 0.35em;
+    }
+    pre {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+    pre code {
+      background: transparent;
+      border: 0;
+      padding: 0;
+    }
+    ul { padding-left: 1.5rem; }
+    li { margin: 0.35rem 0; }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin: 0.5rem 0 1.5rem;
+    }
+    .links a {
+      padding: 0.4rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--card);
+    }
+    footer {
+      margin-top: 4rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ga-mcp-full</h1>
+    <p class="tagline">Google Analytics 4 — full Admin API + Data API — for AI assistants.</p>
+
+    <div class="links">
+      <a href="https://github.com/ringo380/ga-mcp-full">GitHub</a>
+      <a href="https://pypi.org/project/ga-mcp-full/">PyPI</a>
+      <a href="https://github.com/ringo380/ga-mcp-full/blob/main/README.md">Documentation</a>
+      <a href="https://github.com/ringo380/ga-mcp-full/blob/main/PRIVACY.md">Privacy Policy</a>
+      <a href="https://github.com/ringo380/ga-mcp-full/blob/main/SECURITY.md">Security</a>
+    </div>
+
+    <h2>What it is</h2>
+    <p>
+      <code>ga-mcp-full</code> is an open-source <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> server that exposes the full Google Analytics 4 surface — both the Admin API (property &amp; configuration management) and the Data API (reporting) — to MCP-compatible AI assistants such as <a href="https://claude.com/product/claude-code">Claude Code</a>, <a href="https://claude.ai/download">Claude Desktop</a>, Cursor, and Zed.
+    </p>
+    <p>
+      Thirty-plus tools cover properties, custom dimensions and metrics, audiences, key events, data streams, linked accounts (Firebase, BigQuery, Google Ads), Measurement Protocol secrets, standard reports, realtime reports, and metadata discovery.
+    </p>
+
+    <h2>Install</h2>
+    <pre><code>pip install ga-mcp-full
+claude plugin marketplace add ringo380/robworks-claude-code-plugins
+claude plugin install ga-mcp-full@robworks-claude-code-plugins</code></pre>
+    <p>Then authenticate:</p>
+    <pre><code>/ga-mcp-full:auth-login</code></pre>
+
+    <h2>How it handles your data</h2>
+    <ul>
+      <li>Runs entirely on your own machine over stdio. There is no server-side component operated by the project maintainers.</li>
+      <li>OAuth credentials are cached locally at <code>~/.config/ga-mcp/credentials.json</code> with file mode <code>0600</code>. They are never transmitted off your machine.</li>
+      <li>GA4 data is passed directly from Google's API to your local AI assistant. <code>ga-mcp-full</code> does not log, retain, or re-distribute it.</li>
+      <li>No telemetry, no analytics, no phone-home behavior.</li>
+    </ul>
+    <p>
+      Full details: <a href="https://github.com/ringo380/ga-mcp-full/blob/main/PRIVACY.md">Privacy Policy</a>.
+    </p>
+
+    <h2>Source and license</h2>
+    <p>
+      MIT-licensed. Source and issue tracker at <a href="https://github.com/ringo380/ga-mcp-full">github.com/ringo380/ga-mcp-full</a>.
+    </p>
+
+    <footer>
+      Maintained by <a href="https://github.com/ringo380">@ringo380</a>. Support:
+      <a href="mailto:ringo380@gmail.com">ringo380@gmail.com</a>.
+    </footer>
+  </div>
+</body>
+</html>

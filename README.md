@@ -1,5 +1,10 @@
 # ga-mcp-full
 
+[![PyPI version](https://img.shields.io/pypi/v/ga-mcp-full.svg)](https://pypi.org/project/ga-mcp-full/)
+[![Python versions](https://img.shields.io/pypi/pyversions/ga-mcp-full.svg)](https://pypi.org/project/ga-mcp-full/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Release to PyPI](https://github.com/ringo380/ga-mcp-full/actions/workflows/release.yml/badge.svg)](https://github.com/ringo380/ga-mcp-full/actions/workflows/release.yml)
+
 A [Model Context Protocol](https://modelcontextprotocol.io/) server that exposes the **full** Google Analytics 4 surface — both the Admin API (property & configuration management) and the Data API (reporting) — to MCP-compatible clients such as [Claude Code](https://claude.com/product/claude-code), [Claude Desktop](https://claude.ai/download), Cursor, Zed, and anything else that speaks stdio MCP.
 
 Thirty-plus tools cover:
@@ -190,4 +195,4 @@ Issues and PRs welcome at https://github.com/ringo380/ga-mcp-full/issues.
 
 ## License
 
-MIT — see [LICENSE](./LICENSE) (once added).
+MIT — see [LICENSE](./LICENSE).

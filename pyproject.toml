@@ -1,8 +1,25 @@
 [project]
 name = "ga-mcp-full"
 description = "GA4 MCP server with full Admin API read/write access"
-version = "0.2.0"
+readme = "README.md"
+version = "0.3.0"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Ryan Robson" }]
+keywords = ["google-analytics", "ga4", "mcp", "claude-code", "analytics"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+]
 dependencies = [
     "google-analytics-data==0.20.0",
     "google-analytics-admin==0.27.0",
@@ -13,9 +30,19 @@ dependencies = [
     "httpx>=0.28.1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ringo380/ga-mcp-full"
+Repository = "https://github.com/ringo380/ga-mcp-full"
+Issues = "https://github.com/ringo380/ga-mcp-full/issues"
+"Privacy Policy" = "https://github.com/ringo380/ga-mcp-full/blob/main/PRIVACY.md"
+
 [project.scripts]
 ga-mcp-full = "ga_mcp.cli:main"
 
 [build-system]
 requires = ["setuptools>=82.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["ga_mcp*"]
+exclude = ["tests*", "hooks*", "commands*"]

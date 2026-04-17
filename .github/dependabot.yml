@@ -1,0 +1,68 @@
+version: 2
+updates:
+  # Python runtime dependencies (pyproject.toml)
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "America/Chicago"
+    target-branch: main
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - python
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    reviewers:
+      - ringo380
+    assignees:
+      - ringo380
+    groups:
+      google-apis:
+        patterns:
+          - "google-analytics-*"
+          - "google-auth*"
+          - "google-adk"
+          - "google-api-*"
+        update-types:
+          - minor
+          - patch
+      minor-and-patch:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "google-analytics-*"
+          - "google-auth*"
+          - "google-adk"
+          - "google-api-*"
+        update-types:
+          - minor
+          - patch
+
+  # GitHub Actions used by the release workflow
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "America/Chicago"
+    target-branch: main
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: "ci(deps)"
+      include: scope
+    reviewers:
+      - ringo380
+    assignees:
+      - ringo380
+    groups:
+      actions:
+        patterns:
+          - "*"

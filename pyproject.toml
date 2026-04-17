@@ -1,7 +1,7 @@
 [project]
 name = "ga-mcp-full"
 description = "GA4 MCP server with full Admin API read/write access"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.10"
 dependencies = [
     "google-analytics-data==0.20.0",

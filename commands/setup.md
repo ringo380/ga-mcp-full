@@ -1,76 +1,65 @@
 ---
-description: Guided first-run setup for the ga-mcp-full MCP server — register a Google OAuth client, wire up credentials, and complete the browser login.
-allowed-tools: ["Bash", "Read", "Write"]
+description: First-run setup for the ga-mcp-full MCP server — install the CLI if needed, then complete the browser login.
+allowed-tools: ["Bash"]
 ---
 
 # /ga-mcp-full:setup
 
-Walk the user through end-to-end setup for the ga-mcp-full MCP server so they can go from "plugin enabled" to "running GA4 queries from Claude Code" in one session.
+Walk the user from "plugin enabled" to "running GA4 queries from Claude Code" in the smallest possible number of steps.
 
-## Pre-flight checks (run these first, in order)
+## Happy path
 
-1. Verify the CLI is installed:
+1. **Verify the CLI is installed**:
+
    ```bash
-   command -v ga-mcp-full && ga-mcp-full --help || echo "MISSING"
+   command -v ga-mcp-full >/dev/null 2>&1 && echo OK || echo MISSING
    ```
-   If missing, instruct the user to `pip install -e <path-to-ga-mcp-full>` (editable install) or `pip install ga-mcp-full` if it has been published. Do NOT try to pip install on their behalf — ask first.
 
-2. Check for existing credentials:
+   If the output is `MISSING`, tell the user to run:
+
+   ```bash
+   pip install ga-mcp-full
+   ```
+
+   (Or for a local dev checkout: `pip install -e /path/to/ga-mcp-full`.) Do not pip-install on their behalf without asking.
+
+2. **Check existing auth state** (skip login if already set up):
+
    ```bash
    ga-mcp-full auth status || true
    ```
-   If the status says `Authenticated: yes`, tell the user they are already set up and suggest `/ga-mcp-full:auth-status` for details. Stop here.
 
-## OAuth client setup
+   If the first line is `Authenticated: yes`, say so and stop — they're done. Point them at `/ga-mcp-full:auth-status` for details.
 
-Guide the user to create an OAuth 2.0 Desktop client in Google Cloud Console:
+3. **Run the browser login**:
 
-1. Explain they need to visit **https://console.cloud.google.com/apis/credentials** (in a project where the Google Analytics Admin API and Google Analytics Data API are enabled).
-2. Steps:
-   - Click **Create credentials → OAuth client ID**
-   - Application type: **Desktop app**
-   - Name: anything (e.g., "ga-mcp-full local")
-   - Click **Create**, then download the JSON or copy the client ID + secret
-3. Enable the required APIs if they have not been enabled:
-   - Google Analytics Admin API
-   - Google Analytics Data API
+   ```bash
+   ga-mcp-full auth login
+   ```
 
-## Installing credentials
+   This opens Google's consent screen, binds a local callback on `127.0.0.1` on a random free port, completes the PKCE-protected OAuth exchange, and caches a refresh token at `~/.config/ga-mcp/credentials.json` (mode `0600`).
 
-Ask the user which setup style they prefer:
-
-- **(A) Drop the downloaded JSON** at `~/.config/ga-mcp/client_secrets.json` (simplest, no env vars).
-- **(B) Set env vars** `GA_MCP_CLIENT_ID` and `GA_MCP_CLIENT_SECRET` in their shell profile.
-
-For option (A), once the user has the downloaded JSON path, help them move it:
-```bash
-mkdir -p ~/.config/ga-mcp
-mv "<downloaded-path>" ~/.config/ga-mcp/client_secrets.json
-chmod 600 ~/.config/ga-mcp/client_secrets.json
-```
-
-For option (B), show them what to add to their `~/.zshrc` or `~/.bashrc`:
-```bash
-export GA_MCP_CLIENT_ID="<their-client-id>"
-export GA_MCP_CLIENT_SECRET="<their-client-secret>"
-```
-Remind them to start a new shell (or source the profile) before running the login step, since Claude Code's MCP subprocess inherits the shell environment.
-
-## Complete the browser login
-
-Once credentials are in place, run:
-```bash
-ga-mcp-full auth login
-```
-
-This opens the browser, the user approves `analytics.edit` scope, and the refresh token is cached at `~/.config/ga-mcp/credentials.json`.
-
-## Confirm success
-
-Run `ga-mcp-full auth status` one more time and report the result. If `Authenticated: yes`, point out they can now ask Claude for things like "list my GA4 properties" and the MCP server will handle it.
+4. **Confirm**: run `ga-mcp-full auth status` once more. On `Authenticated: yes`, tell the user they can now ask Claude for things like "list my GA4 properties" and the MCP server will handle it. No Claude Code restart needed — the next tool call loads the new credentials from disk.
 
 ## Troubleshooting
 
-- **"OAuth client credentials not found"** — their env vars / client_secrets.json is not where the CLI is looking. Re-verify the path or re-open their shell.
-- **Port 8085 already in use** — another process is using the callback port. `lsof -i :8085` to find it, kill it, retry.
-- **Browser did not open** — the CLI prints the auth URL to stderr; paste that into any browser manually.
+- **"GA auth required: run /ga-mcp-full:auth-login ..."** appearing in a tool response — the user's cached refresh token was rejected or never existed. Run `/ga-mcp-full:auth-login`.
+- **Browser did not open** — the CLI prints the auth URL to stderr; paste that URL into any browser to continue.
+
+## Power users: use your own OAuth client
+
+The server ships with a public Desktop OAuth client so most users never need to visit the Google Cloud Console. If you want to use your own client (e.g., for quota isolation, custom consent screen, or a different GCP project):
+
+1. Create an OAuth 2.0 **Desktop** client at https://console.cloud.google.com/apis/credentials in a project where the Google Analytics Admin API and Google Analytics Data API are enabled.
+2. Override the bundled defaults using either:
+   - Env vars in your shell profile:
+     ```bash
+     export GA_MCP_CLIENT_ID="<your-client-id>"
+     export GA_MCP_CLIENT_SECRET="<your-client-secret>"
+     ```
+   - Or drop the downloaded JSON at `~/.config/ga-mcp/client_secrets.json` (mode `0600`).
+3. Then run `ga-mcp-full auth login` as usual.
+
+## Already using `gcloud`?
+
+If you have run `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/analytics.edit`, the server auto-detects ADC and skips OAuth. No further setup needed.

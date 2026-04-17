@@ -61,11 +61,9 @@ For Cursor, Zed, or other clients, consult their MCP integration docs — the se
 ## Requirements
 
 - Python 3.10 or newer
-- Google Cloud project with:
-  - Google Analytics Admin API enabled
-  - Google Analytics Data API enabled
-- OAuth 2.0 Desktop client ID (Google Cloud Console → APIs & Services → Credentials)
 - Google Analytics 4 property you have **Editor** or **Administrator** access to (the scope requested is `analytics.edit`)
+
+That's it — no Google Cloud Console visit needed for the default install. A public Desktop OAuth client is bundled with the package.
 
 ## Authentication
 
@@ -73,18 +71,41 @@ The server resolves credentials in this order (see `ga_mcp/auth.py`):
 
 1. **Cached OAuth tokens** at `~/.config/ga-mcp/credentials.json`. Refresh tokens renew expired access tokens silently.
 2. **Application Default Credentials** — from `gcloud auth application-default login`.
-3. **Fresh OAuth browser flow** — triggered if `GA_MCP_CLIENT_ID` + `GA_MCP_CLIENT_SECRET` env vars are set, or `~/.config/ga-mcp/client_secrets.json` exists.
+3. **Fresh OAuth browser flow** — using `GA_MCP_CLIENT_ID` + `GA_MCP_CLIENT_SECRET` env vars, `~/.config/ga-mcp/client_secrets.json`, or the bundled public Desktop client (in that order).
 
-### First-time setup
+### First-time setup (majority path)
 
-1. Open **Google Cloud Console → APIs & Services → Credentials** and create an **OAuth 2.0 Client ID** of type **Desktop app**.
-2. Ensure **Google Analytics Admin API** and **Google Analytics Data API** are enabled on the project.
-3. Either:
-   - Download the client JSON and save it to `~/.config/ga-mcp/client_secrets.json` with mode `0600`, **or**
-   - Export `GA_MCP_CLIENT_ID` and `GA_MCP_CLIENT_SECRET` in your shell profile (`~/.zshrc`, `~/.bashrc`, etc.)
-4. Run `ga-mcp-full auth login` (or `/ga-mcp-full:auth-login` from Claude Code).
-5. Approve the `analytics.edit` scope when the browser opens.
-6. The refresh token lands in `~/.config/ga-mcp/credentials.json`. From here on, the client ID/secret are no longer required at runtime.
+1. Install: `pip install ga-mcp-full` (or `pip install -e .` for a dev checkout).
+2. Run `/ga-mcp-full:auth-login` in Claude Code (or `ga-mcp-full auth login` at the shell).
+3. Approve the `analytics.edit` scope when the browser opens.
+4. The refresh token lands in `~/.config/ga-mcp/credentials.json` (mode `0600`).
+
+The OAuth flow uses PKCE (S256) and binds the loopback redirect to a random free port on `127.0.0.1`, per Google's installed-app OAuth guidance. No prior Google Cloud Console client configuration is required.
+
+#### You'll see an "unverified app" warning — this is expected for now
+
+The bundled OAuth client is a real production app owned by this project, but Google's brand verification for sensitive scopes (like `analytics.edit`) takes several business days the first time. Until verification clears, the consent screen displays:
+
+> Google hasn't verified this app
+> The app is requesting access to sensitive info in your Google Account…
+
+To proceed: click **Advanced** → **Go to ga-mcp-full (unsafe)**. The warning is Google's default posture for unverified apps — it doesn't indicate anything is actually wrong with the tool. Review the [privacy policy](./PRIVACY.md) if you want to know exactly what data is accessed (it's all local, per-user, per the scope you approved). The warning will disappear once Google's review completes.
+
+Users who want to avoid the warning entirely can use their own OAuth client — see **Power users** below.
+
+### Power users: use your own OAuth client
+
+If you want quota isolation, a custom consent screen, or to avoid the verification-window warning:
+
+1. Create an **OAuth 2.0 Client ID** of type **Desktop app** at **Google Cloud Console → APIs & Services → Credentials** in a project where the Google Analytics Admin API and Data API are enabled.
+2. Override the bundled defaults via either:
+   - Env vars in your shell profile: `GA_MCP_CLIENT_ID=...` and `GA_MCP_CLIENT_SECRET=...`
+   - Or drop the downloaded JSON at `~/.config/ga-mcp/client_secrets.json` (mode `0600`).
+3. Run `ga-mcp-full auth login` as usual — the env vars / legacy JSON take precedence over the bundled client.
+
+### Already using `gcloud`?
+
+If you have `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/analytics.edit` configured, the server auto-detects ADC and skips OAuth entirely. No further setup needed.
 
 ### Why not the `/mcp` Authenticate button?
 
@@ -96,7 +117,7 @@ Claude Code's `/mcp` menu OAuth flow only applies to **HTTP-transport** MCP serv
 
 | Command | Purpose |
 | --- | --- |
-| `/ga-mcp-full:setup` | Guided first-run — create an OAuth client, install credentials, complete the browser login |
+| `/ga-mcp-full:setup` | Guided first-run — install the CLI (if needed) and run the browser login |
 | `/ga-mcp-full:auth-login` | Run the OAuth browser flow and cache tokens |
 | `/ga-mcp-full:auth-logout` | Remove cached OAuth credentials |
 | `/ga-mcp-full:auth-status` | Show current auth state and credential source |
@@ -151,8 +172,9 @@ Issues and PRs welcome at https://github.com/ringo380/ga-mcp-full/issues.
 
 | Symptom | Fix |
 | --- | --- |
-| `OAuth client credentials not found` | Set `GA_MCP_CLIENT_ID` + `GA_MCP_CLIENT_SECRET`, or drop `client_secrets.json` at `~/.config/ga-mcp/` (mode `0600`) |
-| Port 8085 in use during login | Callback listener is hardcoded to `localhost:8085`. `lsof -i :8085` → `kill <pid>`, retry |
+| "Google hasn't verified this app" on the consent screen | Expected during brand verification. Click **Advanced** → **Go to ga-mcp-full**. Or set up your own OAuth client (see README "Power users") |
+| `GA auth required: run /ga-mcp-full:auth-login in Claude Code, then retry.` | The cached refresh token is missing or revoked. Rerun the slash command — it's the entire fix |
+| OAuth browser window shows "access_denied" during login | Your Google account doesn't have Editor/Admin on any GA4 property. Grant access in **GA4 → Admin → Account/Property Access Management** |
 | Token refresh failed | `ga-mcp-full auth logout && ga-mcp-full auth login` |
 | `/mcp` shows the server but no tools | Confirm `ga-mcp-full auth status` reports authenticated; tools are gated behind a working Analytics API client |
 | Claude Code doesn't see the plugin | `claude plugin list` — confirm `ga-mcp-full@robworks-claude-code-plugins` is installed and enabled. Restart the session if you just enabled it |

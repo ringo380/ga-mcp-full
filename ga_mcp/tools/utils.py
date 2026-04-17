@@ -16,7 +16,7 @@ from google.analytics import admin_v1alpha, admin_v1beta, data_v1beta
 from google.api_core import exceptions as api_exceptions
 from google.api_core.gapic_v1.client_info import ClientInfo
 
-from ga_mcp.auth import get_credentials
+from ga_mcp.auth import AuthRequiredError, get_credentials
 
 
 def _get_package_version() -> str:
@@ -29,25 +29,36 @@ def _get_package_version() -> str:
 _CLIENT_INFO = ClientInfo(user_agent=f"ga-mcp-full/{_get_package_version()}")
 
 
+def _credentials_or_actionable_error():
+    """Wrap get_credentials(), translating AuthRequiredError into a single
+    imperative ValueError that the MCP tool layer surfaces verbatim."""
+    try:
+        return get_credentials()
+    except AuthRequiredError as exc:
+        raise ValueError(
+            f"GA auth required: run {exc.remediation} in Claude Code, then retry."
+        ) from exc
+
+
 # ---------------------------------------------------------------------------
 # API client factories
 # ---------------------------------------------------------------------------
 
 def create_admin_client() -> admin_v1beta.AnalyticsAdminServiceAsyncClient:
     return admin_v1beta.AnalyticsAdminServiceAsyncClient(
-        client_info=_CLIENT_INFO, credentials=get_credentials()
+        client_info=_CLIENT_INFO, credentials=_credentials_or_actionable_error()
     )
 
 
 def create_admin_alpha_client() -> admin_v1alpha.AnalyticsAdminServiceAsyncClient:
     return admin_v1alpha.AnalyticsAdminServiceAsyncClient(
-        client_info=_CLIENT_INFO, credentials=get_credentials()
+        client_info=_CLIENT_INFO, credentials=_credentials_or_actionable_error()
     )
 
 
 def create_data_client() -> data_v1beta.BetaAnalyticsDataAsyncClient:
     return data_v1beta.BetaAnalyticsDataAsyncClient(
-        client_info=_CLIENT_INFO, credentials=get_credentials()
+        client_info=_CLIENT_INFO, credentials=_credentials_or_actionable_error()
     )
 
 

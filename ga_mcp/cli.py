@@ -34,6 +34,7 @@ def main() -> None:
 
 def _handle_auth(args: list[str]) -> None:
     from ga_mcp.auth import (
+        AuthRequiredError,
         run_oauth_flow,
         clear_credentials,
         get_credentials,
@@ -51,6 +52,12 @@ def _handle_auth(args: list[str]) -> None:
                 client_secret = arg.split("=", 1)[1]
         try:
             run_oauth_flow(client_id=client_id, client_secret=client_secret)
+        except AuthRequiredError as exc:
+            print(
+                f"Error: {exc.reason}. Remediation: run {exc.remediation}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
         except ValueError as exc:
             print(f"Error: {exc}", file=sys.stderr)
             sys.exit(1)
@@ -71,6 +78,10 @@ def _handle_auth(args: list[str]) -> None:
             print("Scopes: analytics.edit")
             if hasattr(creds, "expired"):
                 print(f"Token expired: {creds.expired}")
+        except AuthRequiredError as exc:
+            print("Authenticated: no")
+            print(f"Reason: {exc.reason}")
+            print(f"Run: {exc.remediation}")
         except ValueError as e:
             print("Authenticated: no")
             print(f"Error: {e}")

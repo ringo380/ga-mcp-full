@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terms of Service — ga-mcp-full</title>
+  <meta name="description" content="Terms of service for ga-mcp-full: an open-source, MIT-licensed, locally-run MCP server for Google Analytics 4.">
+  <link rel="canonical" href="https://ringo380.github.io/ga-mcp-full/terms.html">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --card: #161b22;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #ffffff;
+        --fg: #1f2328;
+        --muted: #59636e;
+        --border: #d1d9e0;
+        --accent: #0969da;
+        --card: #f6f8fa;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+    h1 {
+      font-size: 2rem;
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    h2 {
+      font-size: 1.2rem;
+      margin: 2rem 0 0.5rem;
+      letter-spacing: -0.01em;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.3rem;
+    }
+    .meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0 0 2rem;
+    }
+    p { margin: 0.75rem 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1em 0.35em;
+    }
+    ul { padding-left: 1.5rem; }
+    li { margin: 0.35rem 0; }
+    .back {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a class="back" href="./">&larr; ga-mcp-full</a>
+    <h1>Terms of Service</h1>
+    <p class="meta">
+      Last updated: 2026-04-19 &middot;
+      <a href="https://github.com/ringo380/ga-mcp-full">Source</a> &middot;
+      Contact: <a href="mailto:ringo380@gmail.com">ringo380@gmail.com</a>
+    </p>
+
+    <h2>About these terms</h2>
+    <p>
+      <code>ga-mcp-full</code> is open-source software distributed under the <a href="https://github.com/ringo380/ga-mcp-full/blob/main/LICENSE">MIT License</a>. These terms supplement (and do not replace) the MIT License, which is the authoritative legal agreement governing your use of the software. In the event of any conflict, the MIT License controls.
+    </p>
+    <p>
+      By installing or using <code>ga-mcp-full</code> you agree to these terms. If you do not agree, do not use the software.
+    </p>
+
+    <h2>What the software does</h2>
+    <p>
+      <code>ga-mcp-full</code> is a <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> server that runs locally on your machine and exposes Google Analytics 4 Admin API and Data API operations as tools usable by AI coding assistants. It is not a hosted service. The project maintainers do not operate a server that receives your data or credentials. See the <a href="./privacy.html">Privacy Policy</a> for details on local data handling.
+    </p>
+
+    <h2>Your responsibilities</h2>
+    <ul>
+      <li>You are responsible for the Google account and the Google Analytics 4 properties you authenticate with. Only authenticate with accounts whose GA4 data you are authorized to access and modify.</li>
+      <li>Because the <code>analytics.edit</code> scope allows administrative changes to your GA4 properties (creating/updating custom dimensions, audiences, key events, data streams, and similar resources), you are responsible for reviewing any tool call suggested by an AI assistant before approving it.</li>
+      <li>You are responsible for complying with <a href="https://developers.google.com/terms">Google's API Terms of Service</a> and the <a href="https://support.google.com/analytics/answer/7687125">Google Analytics Terms of Service</a> applicable to your account.</li>
+      <li>You are responsible for keeping your locally-cached OAuth credentials (<code>~/.config/ga-mcp/credentials.json</code>) secure on your machine.</li>
+    </ul>
+
+    <h2>Acceptable use</h2>
+    <p>
+      Do not use <code>ga-mcp-full</code> to:
+    </p>
+    <ul>
+      <li>Access Google Analytics properties you are not authorized to access.</li>
+      <li>Violate Google's Terms of Service, Google Analytics Terms of Service, or applicable law.</li>
+      <li>Attempt to abuse the shared OAuth client or Google's API quotas in ways that would affect other users of the software.</li>
+    </ul>
+    <p>
+      Abuse of the bundled OAuth client may result in Google revoking the client, which would interrupt access for all users. High-volume users are encouraged to configure their own OAuth client via the environment-variable override documented in the project README.
+    </p>
+
+    <h2>Warranty disclaimer</h2>
+    <p>
+      <code>ga-mcp-full</code> is provided <strong>&quot;AS IS&quot;</strong>, without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. The full disclaimer is stated in the <a href="https://github.com/ringo380/ga-mcp-full/blob/main/LICENSE">MIT License</a>.
+    </p>
+    <p>
+      Administrative actions against your GA4 properties are irreversible in some cases (for example, archiving a custom dimension permanently retires the name). You are solely responsible for reviewing and approving such actions.
+    </p>
+
+    <h2>Limitation of liability</h2>
+    <p>
+      To the fullest extent permitted by law, the authors and copyright holders of <code>ga-mcp-full</code> shall not be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software. This includes, without limitation, data loss, misconfiguration of Google Analytics properties, API quota exhaustion, or interruption of service.
+    </p>
+
+    <h2>Termination</h2>
+    <p>
+      You may stop using the software at any time. To revoke the software's access to your Google account, follow the instructions in the <a href="./privacy.html">Privacy Policy</a> under &ldquo;Credential revocation&rdquo;.
+    </p>
+
+    <h2>Changes to these terms</h2>
+    <p>
+      Changes are made by commit to the project repository and reflected here. The &ldquo;Last updated&rdquo; date at the top reflects the most recent substantive change. Continued use of the software after changes constitutes acceptance of the revised terms.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      Questions: email <a href="mailto:ringo380@gmail.com">ringo380@gmail.com</a> or open an issue at <a href="https://github.com/ringo380/ga-mcp-full/issues">github.com/ringo380/ga-mcp-full/issues</a>.
+    </p>
+  </div>
+</body>
+</html>

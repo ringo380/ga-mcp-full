@@ -26,6 +26,7 @@ from typing import Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
 import google.auth
+import google.auth.exceptions
 import google.auth.transport.requests
 from google.oauth2.credentials import Credentials
 
@@ -262,14 +263,17 @@ def run_oauth_flow(client_id: str = None, client_secret: str = None) -> Credenti
     # intercepted (client_secret is not a true secret for Desktop clients).
     code_verifier, code_challenge = _generate_pkce_pair()
 
-    # Bind to any free port on the loopback interface. Google accepts
-    # 127.0.0.1:<any-port> for Desktop client redirects without prior
-    # registration, so we don't need a fixed port.
+    # Bind to any free port on the loopback interface. We advertise the
+    # redirect as http://localhost:<port> because that matches the default
+    # Desktop-client registration on Google's side (the IP literal form
+    # 127.0.0.1 triggers redirect_uri_mismatch in production mode even
+    # though the docs claim both are accepted). Binding to 127.0.0.1 +
+    # advertising localhost works because localhost resolves to 127.0.0.1.
     _OAuthCallbackHandler.authorization_code = None
     _OAuthCallbackHandler.error = None
     server = HTTPServer(("127.0.0.1", 0), _OAuthCallbackHandler)
     redirect_port = server.server_address[1]
-    redirect_uri = f"http://127.0.0.1:{redirect_port}"
+    redirect_uri = f"http://localhost:{redirect_port}"
 
     # Build authorization URL
     auth_url = (
@@ -338,39 +342,71 @@ def run_oauth_flow(client_id: str = None, client_secret: str = None) -> Credenti
 def get_credentials() -> google.auth.credentials.Credentials:
     """Get valid Google credentials for the Analytics API.
 
-    Resolution order:
-    1. Cached OAuth tokens from ~/.config/ga-mcp/credentials.json
-    2. Application Default Credentials (gcloud ADC)
-    3. Trigger OAuth browser flow if interactive and a client config is resolvable
+    Always non-interactive. The MCP server runs over stdio with no attached TTY,
+    so triggering a browser flow from here would hang the tool call. The CLI's
+    ``auth login`` command is the sole interactive entry point and calls
+    ``run_oauth_flow`` directly.
 
-    Raises ``AuthRequiredError`` with an actionable remediation when no source
-    yields valid credentials. Refresh-token failures propagate unchanged.
+    Resolution order:
+      1. Cached OAuth tokens at ``~/.config/ga-mcp/credentials.json``
+      2. Application Default Credentials — ONLY if the cached ADC token was
+         actually granted the ``analytics.edit`` scope. We force a refresh as a
+         scope-check: ``google.auth.default(scopes=...)`` tags the returned
+         credentials with the requested scopes but does not verify they were
+         granted. A refresh with an ungranted scope fails at Google's token
+         endpoint with ``invalid_scope``.
+
+    Raises ``AuthRequiredError`` with a slash-command remediation when no source
+    yields valid credentials. Refresh-token failures on the cached OAuth path
+    propagate unchanged (that case deletes the stale file).
     """
-    # 1. Try cached OAuth tokens (may raise AuthRequiredError on refresh failure)
+    # 1. Cached OAuth tokens (may raise AuthRequiredError on refresh failure)
     creds = _load_credentials()
     if creds and creds.valid:
         return creds
 
-    # 2. Try ADC
+    # 2. ADC — validated by forcing a refresh with the required scopes. If the
+    #    user ran `gcloud auth application-default login` without
+    #    --scopes=https://www.googleapis.com/auth/analytics.edit, the refresh
+    #    fails and we fall through instead of returning creds that would 401
+    #    on the first GA API call.
     try:
         adc_creds, _ = google.auth.default(scopes=SCOPES)
+        adc_creds.refresh(google.auth.transport.requests.Request())
         return adc_creds
-    except google.auth.exceptions.DefaultCredentialsError:
+    except (
+        google.auth.exceptions.DefaultCredentialsError,
+        google.auth.exceptions.RefreshError,
+        google.auth.exceptions.TransportError,
+    ):
         pass
 
-    # 3. If we have client config, trigger the browser flow
-    try:
-        config = _get_client_config()
-    except AuthRequiredError:
-        raise
-
-    return run_oauth_flow(config["client_id"], config["client_secret"])
+    raise AuthRequiredError(
+        reason="no_credentials",
+        remediation="/ga-mcp-full:auth-login",
+    )
 
 
 def clear_credentials() -> None:
-    """Remove cached OAuth credentials."""
+    """Remove cached OAuth credentials (user-facing: prints to stderr)."""
     if _CREDENTIALS_FILE.exists():
         _CREDENTIALS_FILE.unlink()
         print(f"Removed {_CREDENTIALS_FILE}", file=sys.stderr)
     else:
         print("No cached credentials found.", file=sys.stderr)
+
+
+def clear_cached_credentials_silent() -> bool:
+    """Remove cached OAuth credentials without stderr output.
+
+    Intended for the error-path auto-clear invoked by ``handle_ga_errors`` when
+    the API returns ``Unauthenticated``. Returns True if a file was removed.
+    ADC-based credentials are not managed by this package and are left alone.
+    """
+    if _CREDENTIALS_FILE.exists():
+        try:
+            _CREDENTIALS_FILE.unlink()
+            return True
+        except OSError:
+            return False
+    return False

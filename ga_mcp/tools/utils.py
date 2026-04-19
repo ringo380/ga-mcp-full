@@ -16,7 +16,11 @@ from google.analytics import admin_v1alpha, admin_v1beta, data_v1beta
 from google.api_core import exceptions as api_exceptions
 from google.api_core.gapic_v1.client_info import ClientInfo
 
-from ga_mcp.auth import AuthRequiredError, get_credentials
+from ga_mcp.auth import (
+    AuthRequiredError,
+    clear_cached_credentials_silent,
+    get_credentials,
+)
 
 
 def _get_package_version() -> str:
@@ -178,15 +182,27 @@ def proto_to_json(obj: proto.Message) -> str:
 def handle_ga_errors(func: Callable) -> Callable:
     """Decorator that translates common GA API errors into readable messages.
 
-    Catches ``NotFound``, ``PermissionDenied``, ``InvalidArgument``, and
-    ``FailedPrecondition`` and re-raises as ``ValueError`` with a clear message
-    so the LLM receives actionable feedback.
+    Catches ``Unauthenticated``, ``NotFound``, ``PermissionDenied``,
+    ``InvalidArgument``, and ``FailedPrecondition`` and re-raises as
+    ``ValueError`` with a clear message so the LLM receives actionable feedback.
     """
 
     @functools.wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return await func(*args, **kwargs)
+        except api_exceptions.Unauthenticated as exc:
+            # 401 from GA. The cached OAuth token was revoked, the scope grant
+            # doesn't include analytics.edit, or ADC was used with insufficient
+            # scopes. Clear our OAuth cache so the next /ga-mcp-full:auth-login
+            # starts clean; ADC is not managed by this package so leave it.
+            clear_cached_credentials_silent()
+            raise ValueError(
+                "GA auth required: the credentials were rejected by Google "
+                "(token revoked, insufficient scope, or never granted "
+                "analytics.edit). Run /ga-mcp-full:auth-login in Claude Code, "
+                "then retry."
+            ) from exc
         except api_exceptions.NotFound as exc:
             raise ValueError(
                 f"Resource not found: {exc.message}. "

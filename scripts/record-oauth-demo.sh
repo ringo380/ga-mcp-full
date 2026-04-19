@@ -73,13 +73,23 @@ echo ""
 
 # Step 2: start QuikGif recording in background.
 # --duration 28 keeps us under the 30s free-tier cap with headroom for
-# the shutdown sequence.
+# the shutdown sequence. --region is required — without it, quikgif
+# hangs silently waiting for an interactive window picker.
+# Detect screen size in logical points (macOS) for full-screen capture.
+SCREEN_DIMS=$(osascript -e 'tell application "Finder" to get bounds of window of desktop' 2>/dev/null | awk -F', ' '{print $3 "," $4}')
+SCREEN_W="${SCREEN_DIMS%,*}"
+SCREEN_H="${SCREEN_DIMS#*,}"
+: "${SCREEN_W:=1512}"
+: "${SCREEN_H:=982}"
+QG_LOG="${OUTPUT_DIR}/quikgif-${STAMP}.log"
+
 quikgif record \
+  --region "0,0,${SCREEN_W},${SCREEN_H}" \
   --duration 28 \
   --fps 24 \
   --output "${GIF_PATH}" \
   --show-cursor \
-  &
+  >"${QG_LOG}" 2>&1 &
 QUIKGIF_PID=$!
 
 # Give QuikGif 2 seconds to initialize before the narration starts
@@ -136,17 +146,21 @@ echo ""
 echo "$ # the analytics.edit scope powers every admin tool ga-mcp-full exposes"
 sleep 2
 
-# Step 4: stop recording
+# Step 4: stop recording. SIGINT (not SIGTERM) lets QuikGif flush the
+# encoder and write the GIF cleanly. --duration may have already stopped
+# it; in that case kill is a no-op.
 echo ""
 echo "[done] stopping recording..."
-kill "$QUIKGIF_PID" 2>/dev/null || true
+kill -INT "$QUIKGIF_PID" 2>/dev/null || true
 wait "$QUIKGIF_PID" 2>/dev/null || true
 
-# QuikGif might not have fully flushed; give it a moment
-sleep 1
+# Give QuikGif a moment to finalize the file
+sleep 2
 
 if [ ! -f "${GIF_PATH}" ]; then
   echo "[error] recording file not found at ${GIF_PATH}" >&2
+  echo "[error] quikgif log (${QG_LOG}):" >&2
+  sed 's/^/  | /' "${QG_LOG}" >&2 2>/dev/null || echo "  (log missing)" >&2
   exit 2
 fi
 

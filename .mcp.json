@@ -3,11 +3,7 @@
     "ga-mcp-full": {
       "type": "stdio",
       "command": "ga-mcp-full",
-      "args": ["serve"],
-      "env": {
-        "GA_MCP_CLIENT_ID": "${GA_MCP_CLIENT_ID}",
-        "GA_MCP_CLIENT_SECRET": "${GA_MCP_CLIENT_SECRET}"
-      }
+      "args": ["serve"]
     }
   }
 }

@@ -23,7 +23,7 @@ Thirty-plus tools cover:
 The preferred install is via the **Robworks Claude Code Plugins** marketplace:
 
 ```bash
-pip install ga-mcp-full  # once published to PyPI; for now use: pip install -e /path/to/ga-mcp-full
+pip install ga-mcp-full
 claude plugin marketplace add ringo380/robworks-claude-code-plugins
 claude plugin install ga-mcp-full@robworks-claude-code-plugins
 ```
@@ -75,8 +75,9 @@ That's it — no Google Cloud Console visit needed for the default install. A pu
 The server resolves credentials in this order (see `ga_mcp/auth.py`):
 
 1. **Cached OAuth tokens** at `~/.config/ga-mcp/credentials.json`. Refresh tokens renew expired access tokens silently.
-2. **Application Default Credentials** — from `gcloud auth application-default login`.
-3. **Fresh OAuth browser flow** — using `GA_MCP_CLIENT_ID` + `GA_MCP_CLIENT_SECRET` env vars, `~/.config/ga-mcp/client_secrets.json`, or the bundled public Desktop client (in that order).
+2. **Application Default Credentials** — but only if the ADC token was actually granted the `analytics.edit` scope. A plain `gcloud auth application-default login` does *not* include this scope; you must run `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/analytics.edit`. If the scope is missing, resolution falls through with a clear error.
+
+If neither source yields a working credential, the server surfaces a single actionable message telling you to run `/ga-mcp-full:auth-login`. The MCP server itself never opens a browser — the OAuth flow is driven by the CLI command (`ga-mcp-full auth login`) or its slash-command wrapper, since the MCP stdio subprocess has no attached terminal.
 
 ### First-time setup (majority path)
 
@@ -129,7 +130,7 @@ Claude Code's `/mcp` menu OAuth flow only applies to **HTTP-transport** MCP serv
 
 ### SessionStart hook
 
-`hooks/scripts/ensure-auth.sh` runs at the start of every Claude Code session (`startup|resume|clear|compact`). It is non-blocking and only writes to stderr — if authentication is missing, it prints a one-line hint pointing at `/ga-mcp-full:setup`; it never exits non-zero and never blocks the session.
+`hooks/scripts/ensure-auth.sh` runs at the start of every Claude Code session (`startup|resume|clear|compact`). It is non-blocking and only writes to stderr — if the CLI is installed but unauthenticated, it prints a one-line hint pointing at `/ga-mcp-full:auth-login`; if the CLI is not on `PATH` at all, it points at `pip install ga-mcp-full`. It never exits non-zero and never blocks the session.
 
 ### MCP tools
 

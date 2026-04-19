@@ -37,8 +37,6 @@ def _handle_auth(args: list[str]) -> None:
         AuthRequiredError,
         run_oauth_flow,
         clear_credentials,
-        get_credentials,
-        _CREDENTIALS_FILE,
     )
 
     if not args or args[0] == "login":
@@ -66,25 +64,35 @@ def _handle_auth(args: list[str]) -> None:
         clear_credentials()
 
     elif args[0] == "status":
-        try:
-            has_oauth = _CREDENTIALS_FILE.exists()
-            creds = get_credentials()
-            print("Authenticated: yes")
-            if has_oauth:
-                print("Auth method: OAuth (browser flow)")
-                print(f"Credentials file: {_CREDENTIALS_FILE}")
-            else:
-                print("Auth method: Application Default Credentials (gcloud)")
-            print("Scopes: analytics.edit")
-            if hasattr(creds, "expired"):
-                print(f"Token expired: {creds.expired}")
-        except AuthRequiredError as exc:
+        from ga_mcp.auth import get_authenticated_user_info
+
+        info = get_authenticated_user_info()
+        if not info.get("authenticated"):
             print("Authenticated: no")
-            print(f"Reason: {exc.reason}")
-            print(f"Run: {exc.remediation}")
-        except ValueError as e:
-            print("Authenticated: no")
-            print(f"Error: {e}")
+            if info.get("reason"):
+                print(f"Reason: {info['reason']}")
+            if info.get("remediation"):
+                print(f"Run: {info['remediation']}")
+            return
+
+        print("Authenticated: yes")
+        if info.get("email"):
+            print(f"Account: {info['email']}")
+        else:
+            print("Account: <unknown — re-run `ga-mcp-full auth login` to enable>")
+        method = info.get("auth_method", "oauth")
+        if method == "oauth":
+            print("Auth method: OAuth (browser flow)")
+            if info.get("credentials_file"):
+                print(f"Credentials file: {info['credentials_file']}")
+        else:
+            print("Auth method: Application Default Credentials (gcloud)")
+        scopes = info.get("scopes") or []
+        if scopes:
+            print(f"Scopes: {' '.join(scopes)}")
+        print(f"Token expired: {info.get('token_expired', False)}")
+        if info.get("hint"):
+            print(f"Hint: {info['hint']}")
 
     else:
         print(f"Unknown auth command: {args[0]}", file=sys.stderr)

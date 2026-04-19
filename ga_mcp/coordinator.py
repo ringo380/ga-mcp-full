@@ -14,6 +14,11 @@ from mcp import types as mcp_types
 from mcp.server.lowlevel import Server
 
 # ---------------------------------------------------------------------------
+# Account identity (read + clear cache)
+# ---------------------------------------------------------------------------
+from ga_mcp.tools.auth import whoami, switch_account
+
+# ---------------------------------------------------------------------------
 # Read tools — reporting
 # ---------------------------------------------------------------------------
 from ga_mcp.tools.reporting.core import run_report, _run_report_description
@@ -143,6 +148,9 @@ _run_realtime_ft = FunctionTool(run_realtime_report)
 _run_realtime_ft.description = _run_realtime_report_description()
 
 tools = [
+    # -- Account identity --
+    FunctionTool(whoami),
+    FunctionTool(switch_account),
     # -- Reporting --
     _run_report_ft,
     _run_realtime_ft,

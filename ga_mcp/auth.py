@@ -34,7 +34,17 @@ from google.oauth2.credentials import Credentials
 # Constants
 # ---------------------------------------------------------------------------
 
-SCOPES = ["https://www.googleapis.com/auth/analytics.edit"]
+SCOPES = [
+    "https://www.googleapis.com/auth/analytics.edit",
+    # openid + email let us identify the logged-in Google Account (used by
+    # the `whoami` MCP tool and the CLI `auth status` command). Fresh logins
+    # request all three; existing cached tokens without openid/email still
+    # work for GA API calls — the userinfo lookup just degrades to "unknown".
+    "openid",
+    "email",
+]
+
+_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
 
 # Bundled public OAuth client for the shared "ga-mcp-full" Desktop app.
 #
@@ -394,6 +404,71 @@ def clear_credentials() -> None:
         print(f"Removed {_CREDENTIALS_FILE}", file=sys.stderr)
     else:
         print("No cached credentials found.", file=sys.stderr)
+
+
+def get_authenticated_user_info() -> dict:
+    """Return a structured description of the current authenticated user.
+
+    Always non-interactive (callable from MCP stdio tool handlers). Best-effort
+    email lookup: only the ``openid``/``email`` scopes enable the userinfo
+    endpoint, so cached tokens issued before v0.4.0 (analytics.edit only) and
+    ADC tokens granted without those scopes will return ``email: None`` with a
+    ``hint`` field pointing at ``/ga-mcp-full:auth-login`` for a refresh.
+
+    Keys:
+      - authenticated: bool
+      - reason / remediation: str (only when ``authenticated`` is False)
+      - email: str | None
+      - auth_method: "oauth" | "adc"
+      - scopes: list[str]
+      - token_expired: bool
+      - credentials_file: str (only for OAuth)
+      - hint: str (only when email lookup failed on an otherwise-valid session)
+    """
+    import httpx
+
+    info: dict = {"authenticated": False}
+    try:
+        creds = get_credentials()
+    except AuthRequiredError as exc:
+        info["reason"] = exc.reason
+        info["remediation"] = exc.remediation
+        return info
+
+    info["authenticated"] = True
+    info["auth_method"] = "oauth" if _CREDENTIALS_FILE.exists() else "adc"
+    info["scopes"] = list(getattr(creds, "scopes", None) or [])
+    info["token_expired"] = bool(getattr(creds, "expired", False))
+    if info["auth_method"] == "oauth":
+        info["credentials_file"] = str(_CREDENTIALS_FILE)
+
+    info["email"] = None
+    token = getattr(creds, "token", None)
+    if not token:
+        info["hint"] = "No access token present; run /ga-mcp-full:auth-login."
+        return info
+
+    try:
+        resp = httpx.get(
+            _USERINFO_URL,
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=5.0,
+        )
+    except Exception as exc:
+        info["hint"] = f"Userinfo lookup failed: {exc}"
+        return info
+
+    if resp.status_code == 200:
+        info["email"] = resp.json().get("email")
+    elif resp.status_code in (401, 403):
+        info["hint"] = (
+            "Account identity unavailable — the cached token was granted "
+            "before openid/email scopes were added. Run "
+            "/ga-mcp-full:auth-login to refresh and enable `whoami`."
+        )
+    else:
+        info["hint"] = f"Userinfo lookup returned HTTP {resp.status_code}."
+    return info
 
 
 def clear_cached_credentials_silent() -> bool:

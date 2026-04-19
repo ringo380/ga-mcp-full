@@ -9,6 +9,7 @@ MCP dialog. The actual browser re-auth still has to happen via the
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Dict
 
 from ga_mcp.auth import (
@@ -27,7 +28,10 @@ async def whoami() -> Dict[str, Any]:
     Tokens granted before v0.4.0 only carry the analytics.edit scope, so
     `email` will be None with a hint to re-run /ga-mcp-full:auth-login.
     """
-    return get_authenticated_user_info()
+    # `get_authenticated_user_info` issues a synchronous httpx.get to Google's
+    # userinfo endpoint; offload to a worker thread so we don't block the
+    # asyncio event loop for up to the 5s timeout on every call.
+    return await asyncio.to_thread(get_authenticated_user_info)
 
 
 async def switch_account() -> Dict[str, Any]:
@@ -41,7 +45,7 @@ async def switch_account() -> Dict[str, Any]:
     known), `cleared` (True when cached OAuth creds were removed), and
     `next_step` (the exact slash command to run).
     """
-    previous = get_authenticated_user_info()
+    previous = await asyncio.to_thread(get_authenticated_user_info)
     cleared = clear_cached_credentials_silent()
     return {
         "previous_email": previous.get("email"),

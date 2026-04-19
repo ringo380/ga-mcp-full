@@ -34,15 +34,19 @@ from google.oauth2.credentials import Credentials
 # Constants
 # ---------------------------------------------------------------------------
 
-SCOPES = [
-    "https://www.googleapis.com/auth/analytics.edit",
-    # openid + email let us identify the logged-in Google Account (used by
-    # the `whoami` MCP tool and the CLI `auth status` command). Fresh logins
-    # request all three; existing cached tokens without openid/email still
-    # work for GA API calls — the userinfo lookup just degrades to "unknown".
-    "openid",
-    "email",
-]
+# Scope required for every GA Admin/Data API call. Used as the sole validation
+# target for the ADC fallback path — ADC tokens are only expected to carry
+# analytics.edit (per the documented `gcloud auth application-default login
+# --scopes=https://www.googleapis.com/auth/analytics.edit` setup), so we
+# must NOT require openid/email when probing them or legitimate installs break.
+_GA_API_SCOPES = ["https://www.googleapis.com/auth/analytics.edit"]
+
+# Scopes requested on the interactive OAuth browser flow. The extra openid +
+# email scopes power the `whoami` MCP tool and the CLI `auth status` command
+# (they unlock Google's userinfo endpoint). Cached tokens that predate this
+# addition still work for GA API calls — the userinfo lookup just degrades to
+# a hint pointing at /ga-mcp-full:auth-login.
+SCOPES = _GA_API_SCOPES + ["openid", "email"]
 
 _USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
 
@@ -181,7 +185,12 @@ def _load_credentials() -> Optional[Credentials]:
         token_uri=data.get("token_uri", "https://oauth2.googleapis.com/token"),
         client_id=data.get("client_id"),
         client_secret=data.get("client_secret"),
-        scopes=data.get("scopes", SCOPES),
+        # Fallback for legacy / hand-crafted credentials.json files that
+        # omit the "scopes" key — pin to the GA API scope only, since
+        # that's the minimum we know was granted. Requesting the full
+        # SCOPES list here would cause refresh to fail with invalid_scope
+        # for tokens that never carried openid/email.
+        scopes=data.get("scopes", _GA_API_SCOPES),
     )
 
     # Refresh if expired
@@ -375,13 +384,16 @@ def get_credentials() -> google.auth.credentials.Credentials:
     if creds and creds.valid:
         return creds
 
-    # 2. ADC — validated by forcing a refresh with the required scopes. If the
+    # 2. ADC — validated by forcing a refresh with the GA API scope ONLY. If the
     #    user ran `gcloud auth application-default login` without
     #    --scopes=https://www.googleapis.com/auth/analytics.edit, the refresh
     #    fails and we fall through instead of returning creds that would 401
-    #    on the first GA API call.
+    #    on the first GA API call. We deliberately do NOT probe with the
+    #    openid/email scopes (those are only meaningful for the userinfo
+    #    lookup used by `whoami`) — requiring them would break ADC setups
+    #    that followed the documented gcloud command.
     try:
-        adc_creds, _ = google.auth.default(scopes=SCOPES)
+        adc_creds, _ = google.auth.default(scopes=_GA_API_SCOPES)
         adc_creds.refresh(google.auth.transport.requests.Request())
         return adc_creds
     except (
@@ -454,13 +466,17 @@ def get_authenticated_user_info() -> dict:
             headers={"Authorization": f"Bearer {token}"},
             timeout=5.0,
         )
+        if resp.status_code == 200:
+            # Guard .json() inside the try so a non-JSON 200 (captive
+            # portal / middlebox injection) degrades to a hint instead
+            # of propagating JSONDecodeError out of a best-effort call.
+            info["email"] = resp.json().get("email")
+            return info
     except Exception as exc:
         info["hint"] = f"Userinfo lookup failed: {exc}"
         return info
 
-    if resp.status_code == 200:
-        info["email"] = resp.json().get("email")
-    elif resp.status_code in (401, 403):
+    if resp.status_code in (401, 403):
         info["hint"] = (
             "Account identity unavailable — the cached token was granted "
             "before openid/email scopes were added. Run "

@@ -1,6 +1,6 @@
 {
   "name": "ga-mcp-full",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "GA4 MCP server with full Admin API read/write access — bundled with Claude Code auth helpers and SessionStart bootstrap.",
   "author": {
     "name": "Ryan Robson"

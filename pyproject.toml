@@ -2,7 +2,7 @@
 name = "ga-mcp-full"
 description = "GA4 MCP server with full Admin API read/write access"
 readme = "README.md"
-version = "0.3.1"
+version = "0.4.0"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "Ryan Robson" }]

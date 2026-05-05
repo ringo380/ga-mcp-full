@@ -1,6 +1,6 @@
 # Privacy Policy — ga-mcp-full
 
-**Last updated:** 2026-04-16
+**Last updated:** 2026-05-05
 **Project:** [ga-mcp-full](https://github.com/ringo380/ga-mcp-full)
 **Contact:** ringo380@gmail.com — or open a GitHub issue at https://github.com/ringo380/ga-mcp-full/issues
 
@@ -23,6 +23,22 @@ All access is on-demand and initiated by the user of the AI assistant. The tool 
 - **OAuth credentials** (access + refresh tokens) are cached locally at `~/.config/ga-mcp/credentials.json` on the end user's own machine, with file permissions `0600` (user-read/write only). They are never transmitted to the project maintainers or any third party.
 - **Google Analytics data** (reports, configuration) retrieved through the tool is passed directly from Google's API to the local MCP client and then to the AI assistant you are using. `ga-mcp-full` itself does not log, retain, or redistribute this data.
 - **No server-side storage.** The project maintainers do not operate any hosted service that receives your data or credentials. The shared OAuth client ID + secret bundled with the tool exist only to identify the software to Google's OAuth servers; they do not route traffic through any third-party server.
+
+## Data retention and deletion
+
+OAuth tokens are retained on the local machine only until the user removes them. They are deleted when the user runs `ga-mcp-full auth logout` (or the equivalent `/ga-mcp-full:auth-logout` slash command), or when the `~/.config/ga-mcp/credentials.json` file is manually removed. Revoking access at https://myaccount.google.com/permissions additionally invalidates the refresh token at Google's end so any remaining local copy is non-functional. No backup, archive, or off-machine copy of these credentials is created by `ga-mcp-full`.
+
+Google Analytics data fetched at runtime is held only in process memory long enough to return the result to the AI assistant; it is not written to disk by `ga-mcp-full` and is discarded when the MCP subprocess exits.
+
+## Use of Google user data
+
+`ga-mcp-full` uses Google user data **solely** to fulfill the user's tool requests within their AI assistant session. Specifically, `ga-mcp-full` does **not**:
+
+- Sell, lease, or trade Google user data to any third party.
+- Transfer Google user data to any third party for advertising, marketing, or remarketing purposes.
+- Use Google user data to train or improve any general-purpose AI/ML model. (Tool results are passed to the AI assistant the user has chosen — e.g., Claude Code — whose handling is governed by that vendor's privacy policy. `ga-mcp-full` itself performs no model training, fine-tuning, or analytics on the data.)
+- Use Google user data for credit assessment, lending, or any purpose unrelated to the user-initiated tool call.
+- Allow humans associated with the project to read Google user data, except (a) the user themselves on their own machine, (b) with the user's explicit consent for support purposes, (c) for security investigations, or (d) where required by law.
 
 ## What is transmitted
 

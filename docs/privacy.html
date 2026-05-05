@@ -82,7 +82,7 @@
     <a class="back" href="./">&larr; ga-mcp-full</a>
     <h1>Privacy Policy</h1>
     <p class="meta">
-      Last updated: 2026-04-17 &middot;
+      Last updated: 2026-05-05 &middot;
       <a href="https://github.com/ringo380/ga-mcp-full">Source</a> &middot;
       Contact: <a href="mailto:ringo380@gmail.com">ringo380@gmail.com</a>
     </p>
@@ -110,6 +110,26 @@
       <li><strong>OAuth credentials</strong> (access + refresh tokens) are cached locally at <code>~/.config/ga-mcp/credentials.json</code> on the end user's own machine, with file permissions <code>0600</code> (user-read/write only). They are never transmitted to the project maintainers or any third party.</li>
       <li><strong>Google Analytics data</strong> (reports, configuration) retrieved through the tool is passed directly from Google's API to the local MCP client and then to the AI assistant you are using. <code>ga-mcp-full</code> itself does not log, retain, or redistribute this data.</li>
       <li><strong>No server-side storage.</strong> The project maintainers do not operate any hosted service that receives your data or credentials. The shared OAuth client ID + secret bundled with the tool exist only to identify the software to Google's OAuth servers; they do not route traffic through any third-party server.</li>
+    </ul>
+
+    <h2>Data retention and deletion</h2>
+    <p>
+      OAuth tokens are retained on the local machine only until the user removes them. They are deleted when the user runs <code>ga-mcp-full auth logout</code> (or the equivalent <code>/ga-mcp-full:auth-logout</code> slash command), or when the <code>~/.config/ga-mcp/credentials.json</code> file is manually removed. Revoking access at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a> additionally invalidates the refresh token at Google's end so any remaining local copy is non-functional. No backup, archive, or off-machine copy of these credentials is created by <code>ga-mcp-full</code>.
+    </p>
+    <p>
+      Google Analytics data fetched at runtime is held only in process memory long enough to return the result to the AI assistant; it is not written to disk by <code>ga-mcp-full</code> and is discarded when the MCP subprocess exits.
+    </p>
+
+    <h2>Use of Google user data</h2>
+    <p>
+      <code>ga-mcp-full</code> uses Google user data <strong>solely</strong> to fulfill the user's tool requests within their AI assistant session. Specifically, <code>ga-mcp-full</code> does <strong>not</strong>:
+    </p>
+    <ul>
+      <li>Sell, lease, or trade Google user data to any third party.</li>
+      <li>Transfer Google user data to any third party for advertising, marketing, or remarketing purposes.</li>
+      <li>Use Google user data to train or improve any general-purpose AI/ML model. (Tool results are passed to the AI assistant the user has chosen — e.g., Claude Code — whose handling is governed by that vendor's privacy policy. <code>ga-mcp-full</code> itself performs no model training, fine-tuning, or analytics on the data.)</li>
+      <li>Use Google user data for credit assessment, lending, or any purpose unrelated to the user-initiated tool call.</li>
+      <li>Allow humans associated with the project to read Google user data, except (a) the user themselves on their own machine, (b) with the user's explicit consent for support purposes, (c) for security investigations, or (d) where required by law.</li>
     </ul>
 
     <h2>What is transmitted</h2>

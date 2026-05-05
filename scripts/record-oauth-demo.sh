@@ -27,6 +27,23 @@ for tool in ga-mcp-full quikgif ffmpeg python3; do
   command -v "$tool" >/dev/null 2>&1 || { echo "error: $tool not on PATH" >&2; exit 1; }
 done
 
+if [ -z "${GA_DEMO_PROPERTY_ID:-}" ]; then
+  cat >&2 <<'ERR'
+error: GA_DEMO_PROPERTY_ID is not set.
+
+The verification demo creates and immediately archives a throwaway
+custom dimension to prove the analytics.edit scope is needed for write
+operations (otherwise reviewers may insist on the readonly scope).
+
+Set GA_DEMO_PROPERTY_ID to a GA4 property ID you own and can safely
+write to, e.g.:
+
+  export GA_DEMO_PROPERTY_ID=123456789
+  ./scripts/record-oauth-demo.sh
+ERR
+  exit 1
+fi
+
 OUTPUT_DIR="${HOME}/Desktop"
 STAMP=$(date +%Y%m%d-%H%M%S)
 GIF_PATH="${OUTPUT_DIR}/ga-mcp-full-oauth-demo-${STAMP}.gif"
@@ -40,7 +57,7 @@ cat <<'INTRO'
 
 This script will:
   1. Clear any cached ga-mcp-full OAuth credentials
-  2. Start a QuikGif screen recording (full display, up to 30s)
+  2. Start a QuikGif screen recording (full display, up to 60s)
   3. Run `ga-mcp-full auth login` — your browser will open
   4. PAUSE for you to click through Google's consent screen
   5. Show auth status and a read-only tool call that uses analytics.edit
@@ -49,7 +66,14 @@ This script will:
 What Google wants to see in the finished video:
   • The "ga-mcp-full" OAuth client name in the consent screen
   • The analytics.edit scope being granted
-  • The scope actually being used (a tool call returning real GA data)
+  • The scope actually being used for a WRITE operation (this script
+    creates + archives a throwaway custom dimension to prove the scope
+    is minimal — analytics.readonly cannot do this)
+
+Required env var:
+  GA_DEMO_PROPERTY_ID — a GA4 property ID you own and can safely
+                       create+archive a test custom dimension on.
+                       Example:  export GA_DEMO_PROPERTY_ID=123456789
 
 After the recording, upload the MP4 to YouTube (Unlisted is fine),
 then paste the URL into the "YouTube link" field at:
@@ -72,8 +96,10 @@ echo "[prep] recording will save to: ${GIF_PATH}"
 echo ""
 
 # Step 2: start QuikGif recording in background.
-# --duration 28 keeps us under the 30s free-tier cap with headroom for
-# the shutdown sequence. --region is required — without it, quikgif
+# --duration 60 gives headroom for the OAuth browser flow + a write
+# operation (create + archive a custom dimension) so reviewers see the
+# analytics.edit scope actually being used for writes, not just reads.
+# --region is required — without it, quikgif
 # hangs silently waiting for an interactive window picker.
 # Detect screen size in logical points (macOS) for full-screen capture.
 SCREEN_DIMS=$(osascript -e 'tell application "Finder" to get bounds of window of desktop' 2>/dev/null | awk -F', ' '{print $3 "," $4}')
@@ -85,7 +111,7 @@ QG_LOG="${OUTPUT_DIR}/quikgif-${STAMP}.log"
 
 quikgif record \
   --region "0,0,${SCREEN_W},${SCREEN_H}" \
-  --duration 28 \
+  --duration 60 \
   --fps 24 \
   --output "${GIF_PATH}" \
   --show-cursor \
@@ -119,31 +145,60 @@ ga-mcp-full auth status
 echo ""
 sleep 2
 
-echo "$ # tool call: list GA4 account summaries using the scope"
-echo "$ python3 -c 'from ga_mcp...'"
+echo "$ # tool call: WRITE operation that requires analytics.edit"
+echo "$ # (analytics.readonly cannot do this — proves the scope is minimal)"
+echo "$ python3 -c 'create_custom_dimension(...) ; archive_custom_dimension(...)'"
 sleep 1
-python3 - <<'PY' 2>&1 | head -14
+
+if [ -z "${GA_DEMO_PROPERTY_ID:-}" ]; then
+  echo ""
+  echo "[error] GA_DEMO_PROPERTY_ID not set." >&2
+  echo "[error] Set it to a GA4 property ID you own + can safely write to," >&2
+  echo "[error] e.g.  export GA_DEMO_PROPERTY_ID=123456789" >&2
+  echo "[error] The script creates and immediately archives a throwaway" >&2
+  echo "[error] custom dimension named 'oauth_verify_demo' on that property." >&2
+  kill -INT "$QUIKGIF_PID" 2>/dev/null || true
+  exit 3
+fi
+
+GA_DEMO_PROPERTY_ID="${GA_DEMO_PROPERTY_ID}" python3 - <<'PY' 2>&1 | head -20
 import asyncio
-from ga_mcp.tools.utils import create_admin_client
+import os
+from ga_mcp.tools.admin.custom_definitions import (
+    create_custom_dimension,
+    archive_custom_dimension,
+)
+
+PROPERTY_ID = os.environ["GA_DEMO_PROPERTY_ID"]
+PARAM = "oauth_verify_demo"
 
 async def main():
-    client = create_admin_client()
-    pager = await client.list_account_summaries()
-    count = 0
-    async for summary in pager:
-        count += 1
-        print(f"  account: {summary.display_name}  ({summary.name})")
-        for prop in summary.property_summaries[:2]:
-            print(f"    property: {prop.display_name}  ({prop.property})")
-        if count >= 3:
-            break
-    print(f"\n  [scope: analytics.edit · {count} accounts shown]")
+    print(f"  [write 1/2] create_custom_dimension on property {PROPERTY_ID}...")
+    created = await create_custom_dimension(
+        property_id=PROPERTY_ID,
+        parameter_name=PARAM,
+        display_name="OAuth verify demo",
+        scope="EVENT",
+        description="Throwaway dimension created during OAuth verification demo.",
+    )
+    resource_name = created["name"]
+    dim_id = resource_name.split("/")[-1]
+    print(f"  [ok]        created: {resource_name}")
+
+    print(f"  [write 2/2] archive_custom_dimension to clean up...")
+    await archive_custom_dimension(
+        property_id=PROPERTY_ID,
+        custom_dimension_id=dim_id,
+    )
+    print(f"  [ok]        archived: {resource_name}")
+    print(f"\n  [scope: analytics.edit · 1 dimension created + archived]")
+    print(f"  [analytics.readonly CANNOT perform either of these calls]")
 
 asyncio.run(main())
 PY
 
 echo ""
-echo "$ # the analytics.edit scope powers every admin tool ga-mcp-full exposes"
+echo "$ # analytics.edit is the minimum scope that supports the admin write API"
 sleep 2
 
 # Step 4: stop recording. SIGINT (not SIGTERM) lets QuikGif flush the

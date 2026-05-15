@@ -1,6 +1,7 @@
 ---
 description: Run the Google Analytics OAuth browser flow and cache credentials for the ga-mcp-full MCP server.
 allowed-tools: ["Bash"]
+disable-model-invocation: true
 ---
 
 # /ga-mcp-full:auth-login

@@ -1,6 +1,7 @@
 ---
 description: First-run setup for the ga-mcp-full MCP server — install the CLI if needed, then complete the browser login.
 allowed-tools: ["Bash"]
+disable-model-invocation: true
 ---
 
 # /ga-mcp-full:setup

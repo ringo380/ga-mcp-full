@@ -1,6 +1,7 @@
 ---
 description: Clear cached Google Analytics OAuth credentials for the ga-mcp-full MCP server.
 allowed-tools: ["Bash"]
+disable-model-invocation: true
 ---
 
 # /ga-mcp-full:auth-logout

@@ -1,6 +1,7 @@
 ---
 description: Show the current Google Analytics auth status for the ga-mcp-full MCP server.
 allowed-tools: ["Bash"]
+disable-model-invocation: true
 ---
 
 # /ga-mcp-full:auth-status

@@ -1,5 +1,5 @@
 ---
-description: Diagnose the ga-mcp-full MCP connection and walk through reconnect options when tools stop responding.
+description: Diagnose the ga-mcp-full MCP connection and walk through reconnect options. Use when GA tool calls stop responding, return auth errors, or /plugin shows a red error for ga-mcp-full.
 allowed-tools: ["Bash"]
 ---
 

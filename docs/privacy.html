@@ -82,7 +82,7 @@
     <a class="back" href="./">&larr; ga-mcp-full</a>
     <h1>Privacy Policy</h1>
     <p class="meta">
-      Last updated: 2026-05-05 &middot;
+      Last updated: 2026-06-09 &middot;
       <a href="https://github.com/ringo380/ga-mcp-full">Source</a> &middot;
       Contact: <a href="mailto:ringo380@gmail.com">ringo380@gmail.com</a>
     </p>
@@ -94,7 +94,7 @@
 
     <h2>What data is accessed</h2>
     <p>
-      When you authenticate, <code>ga-mcp-full</code> is granted the <code>https://www.googleapis.com/auth/analytics.edit</code> OAuth scope. This allows the tool to:
+      When you authenticate, <code>ga-mcp-full</code> is granted two Google Analytics OAuth scopes &mdash; <code>https://www.googleapis.com/auth/analytics.edit</code> and <code>https://www.googleapis.com/auth/analytics.readonly</code> &mdash; together with the standard <code>openid</code> and <code>email</code> sign-in scopes (used only to show which Google account is connected). The Analytics scopes allow the tool to:
     </p>
     <ul>
       <li>Read property-, data-stream-, and account-level configuration of your GA4 properties.</li>
@@ -148,9 +148,16 @@
       <code>ga-mcp-full</code> itself is an intermediary that runs on your machine and does not introduce additional data-collection relationships.
     </p>
 
-    <h2>Why the <code>analytics.edit</code> scope</h2>
+    <h2>Why the <code>analytics.edit</code> and <code>analytics.readonly</code> scopes</h2>
     <p>
-      The tool exposes ~30 GA4 Admin and Data API operations, including administrative ones (create/update custom dimensions, audiences, key events, and so on). Google's OAuth scope model does not offer a finer-grained "write-certain-things-only" alternative below <code>analytics.edit</code>, so the broader scope is requested to make the full tool set available. Users who only need read access may prefer to set up their own OAuth client with the <code>analytics.readonly</code> scope via the environment-variable override documented in the project README.
+      The tool exposes ~30 GA4 Admin API and Data API operations. They map to two scopes, each the minimum its API accepts:
+    </p>
+    <ul>
+      <li><code>analytics.edit</code> (Admin API) covers the administrative read/write operations &mdash; create, update, and delete custom dimensions, custom metrics, key events, audiences, data streams, Firebase/BigQuery/Google Ads links, measurement-protocol secrets, and data-retention settings.</li>
+      <li><code>analytics.readonly</code> (Data API) covers the reporting operations (<code>run_report</code>, <code>run_realtime_report</code>). The GA4 Data API does not accept <code>analytics.edit</code>, so <code>analytics.readonly</code> is the minimum scope that enables reporting.</li>
+    </ul>
+    <p>
+      Google's OAuth model offers no finer-grained write scope below <code>analytics.edit</code>, and no single scope spans both the Admin write operations and the Data API reads, so both are requested. The tool requests no broader <code>analytics</code> scope and no restricted scopes. Users who only need read access may set up their own OAuth client limited to <code>analytics.readonly</code> via the environment-variable override documented in the project README.
     </p>
 
     <h2>Credential revocation</h2>

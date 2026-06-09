@@ -1,6 +1,6 @@
 # Privacy Policy — ga-mcp-full
 
-**Last updated:** 2026-05-05
+**Last updated:** 2026-06-09
 **Project:** [ga-mcp-full](https://github.com/ringo380/ga-mcp-full)
 **Contact:** ringo380@gmail.com — or open a GitHub issue at https://github.com/ringo380/ga-mcp-full/issues
 
@@ -10,7 +10,7 @@
 
 ## What data is accessed
 
-When you authenticate, ga-mcp-full is granted the `https://www.googleapis.com/auth/analytics.edit` OAuth scope. This allows the tool to:
+When you authenticate, ga-mcp-full is granted two Google Analytics OAuth scopes — `https://www.googleapis.com/auth/analytics.edit` and `https://www.googleapis.com/auth/analytics.readonly` — together with the standard `openid` and `email` sign-in scopes (used only to show which Google account is connected). The Analytics scopes allow the tool to:
 
 - Read property-, data-stream-, and account-level configuration of your GA4 properties.
 - Read report data, realtime data, and metadata from your GA4 properties.
@@ -53,9 +53,14 @@ Google Analytics data fetched at runtime is held only in process memory long eno
 
 `ga-mcp-full` itself is an intermediary that runs on your machine and does not introduce additional data-collection relationships.
 
-## Why the `analytics.edit` scope
+## Why the `analytics.edit` and `analytics.readonly` scopes
 
-The tool exposes ~30 GA4 Admin and Data API operations, including administrative ones (create/update custom dimensions, audiences, key events, and so on). Google's OAuth scope model does not offer a finer-grained "write-certain-things-only" alternative below `analytics.edit`, so the broader scope is requested to make the full tool set available. Users who only need read access may prefer to set up their own OAuth client with the `analytics.readonly` scope via the environment-variable override documented in the project README.
+The tool exposes ~30 GA4 Admin API and Data API operations. They map to two scopes, each the minimum its API accepts:
+
+- `analytics.edit` (Admin API) covers the administrative read/write operations — create, update, and delete custom dimensions, custom metrics, key events, audiences, data streams, Firebase/BigQuery/Google Ads links, measurement-protocol secrets, and data-retention settings.
+- `analytics.readonly` (Data API) covers the reporting operations (`run_report`, `run_realtime_report`). The GA4 Data API does not accept `analytics.edit`, so `analytics.readonly` is the minimum scope that enables reporting.
+
+Google's OAuth model offers no finer-grained write scope below `analytics.edit`, and no single scope spans both the Admin write operations and the Data API reads, so both are requested. The tool requests no broader `analytics` scope and no restricted scopes. Users who only need read access may set up their own OAuth client limited to `analytics.readonly` via the environment-variable override documented in the project README.
 
 ## Credential revocation
 

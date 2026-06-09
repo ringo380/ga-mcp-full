@@ -66,7 +66,7 @@ For Cursor, Zed, or other clients, consult their MCP integration docs — the se
 ## Requirements
 
 - Python 3.10 or newer
-- Google Analytics 4 property you have **Editor** or **Administrator** access to (the scope requested is `analytics.edit`)
+- Google Analytics 4 property you have **Editor** or **Administrator** access to (the OAuth flow requests `analytics.edit` for Admin API writes and `analytics.readonly` for Data API reporting)
 
 That's it — no Google Cloud Console visit needed for the default install. A public Desktop OAuth client is bundled with the package.
 
@@ -75,7 +75,7 @@ That's it — no Google Cloud Console visit needed for the default install. A pu
 The server resolves credentials in this order (see `ga_mcp/auth.py`):
 
 1. **Cached OAuth tokens** at `~/.config/ga-mcp/credentials.json`. Refresh tokens renew expired access tokens silently.
-2. **Application Default Credentials** — but only if the ADC token was actually granted the `analytics.edit` scope. A plain `gcloud auth application-default login` does *not* include this scope; you must run `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/analytics.edit`. If the scope is missing, resolution falls through with a clear error.
+2. **Application Default Credentials** — but only if the ADC token was actually granted the `analytics.edit` scope. A plain `gcloud auth application-default login` does *not* include this scope; you must run `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/analytics.edit`. (Append `,https://www.googleapis.com/auth/analytics.readonly` if you also want the reporting tools, which call the GA4 Data API and require the read-only scope.) If the scope is missing, resolution falls through with a clear error.
 
 If neither source yields a working credential, the server surfaces a single actionable message telling you to run `/ga-mcp-full:auth-login`. The MCP server itself never opens a browser — the OAuth flow is driven by the CLI command (`ga-mcp-full auth login`) or its slash-command wrapper, since the MCP stdio subprocess has no attached terminal.
 
@@ -83,7 +83,7 @@ If neither source yields a working credential, the server surfaces a single acti
 
 1. Install: `pip install ga-mcp-full` (or `pip install -e .` for a dev checkout).
 2. Run `/ga-mcp-full:auth-login` in Claude Code (or `ga-mcp-full auth login` at the shell).
-3. Approve the `analytics.edit` scope when the browser opens.
+3. Approve the requested scopes (`analytics.edit` + `analytics.readonly`) when the browser opens.
 4. The refresh token lands in `~/.config/ga-mcp/credentials.json` (mode `0600`).
 
 The OAuth flow uses PKCE (S256) and binds the loopback redirect to a random free port on `127.0.0.1`, per Google's installed-app OAuth guidance. No prior Google Cloud Console client configuration is required.
@@ -111,7 +111,7 @@ If you want quota isolation, a custom consent screen, or to avoid the verificati
 
 ### Already using `gcloud`?
 
-If you have `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/analytics.edit` configured, the server auto-detects ADC and skips OAuth entirely. No further setup needed.
+If you have `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/analytics.edit,https://www.googleapis.com/auth/analytics.readonly` configured, the server auto-detects ADC and skips OAuth entirely. No further setup needed. (The `analytics.readonly` scope is only needed for the reporting tools; `analytics.edit` alone is enough for the Admin API.)
 
 ### Why not the `/mcp` Authenticate button?
 

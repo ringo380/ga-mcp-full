@@ -1,7 +1,8 @@
 """OAuth 2.0 browser-based authentication for GA4 MCP server.
 
-On first use, opens a browser for Google OAuth consent with analytics.edit
-scope. Caches refresh tokens locally at ~/.config/ga-mcp/credentials.json.
+On first use, opens a browser for Google OAuth consent with the analytics.edit
+(Admin API) and analytics.readonly (Data API) scopes. Caches refresh tokens
+locally at ~/.config/ga-mcp/credentials.json.
 Falls back to Application Default Credentials if no OAuth tokens are found
 and --no-browser is set.
 
@@ -34,19 +35,25 @@ from google.oauth2.credentials import Credentials
 # Constants
 # ---------------------------------------------------------------------------
 
-# Scope required for every GA Admin/Data API call. Used as the sole validation
+# Scope required for every GA Admin API call. Used as the sole validation
 # target for the ADC fallback path — ADC tokens are only expected to carry
 # analytics.edit (per the documented `gcloud auth application-default login
 # --scopes=https://www.googleapis.com/auth/analytics.edit` setup), so we
 # must NOT require openid/email when probing them or legitimate installs break.
 _GA_API_SCOPES = ["https://www.googleapis.com/auth/analytics.edit"]
 
+# Data API scope — required for run_report / run_realtime_report. analytics.edit
+# alone is rejected by the Data API endpoints, so we request this explicitly on
+# the interactive OAuth flow. Kept out of _GA_API_SCOPES so the ADC validation
+# path doesn't break for installs that only have analytics.edit configured.
+_GA_DATA_API_SCOPES = ["https://www.googleapis.com/auth/analytics.readonly"]
+
 # Scopes requested on the interactive OAuth browser flow. The extra openid +
 # email scopes power the `whoami` MCP tool and the CLI `auth status` command
 # (they unlock Google's userinfo endpoint). Cached tokens that predate this
 # addition still work for GA API calls — the userinfo lookup just degrades to
 # a hint pointing at /ga-mcp-full:auth-login.
-SCOPES = _GA_API_SCOPES + ["openid", "email"]
+SCOPES = _GA_API_SCOPES + _GA_DATA_API_SCOPES + ["openid", "email"]
 
 _USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
 

@@ -10,12 +10,18 @@
 #
 # This script stages a clean terminal with scripted narration, triggers
 # the OAuth browser flow (user clicks Continue in the consent screen),
-# then demonstrates a GA4 admin WRITE call that uses the scope (creates
-# and immediately archives a throwaway custom dimension to prove the
-# analytics.edit scope is the minimum required — analytics.readonly
-# cannot perform either call). ffmpeg records the screen directly to
-# MP4 via macOS avfoundation. Upload the MP4 to YouTube (Unlisted is
-# fine) and paste the URL into the Google Console Data Access form.
+# then demonstrates BOTH requested scopes actually being used:
+#   • analytics.readonly — a run_report READ call returning real GA4
+#     data (sessions by date for the last 7 days). This is what the
+#     Data API requires; analytics.edit alone cannot call run_report.
+#   • analytics.edit — a GA4 admin WRITE call (creates and immediately
+#     archives a throwaway custom dimension), which analytics.readonly
+#     cannot perform.
+# Showing one read + one write proves the two-scope set is minimal:
+# each scope does something the other cannot. ffmpeg records the screen
+# directly to MP4 via macOS avfoundation. Upload the MP4 to YouTube
+# (Unlisted is fine) and paste the URL into the Google Console Data
+# Access form.
 #
 # Usage:
 #   export GA_DEMO_PROPERTY_ID=<your GA4 property id>
@@ -87,10 +93,13 @@ This script will:
 
 What Google wants to see in the finished video:
   • The "ga-mcp-full" OAuth client name in the consent screen
-  • The analytics.edit scope being granted
-  • The scope actually being used for a WRITE operation (this script
-    creates + archives a throwaway custom dimension to prove the scope
-    is minimal — analytics.readonly cannot do this)
+  • Both scopes being granted: analytics.readonly + analytics.edit
+  • Each scope actually being used:
+      - analytics.readonly → a run_report READ that returns real GA4
+        data (analytics.edit alone cannot call the Data API)
+      - analytics.edit → a create + archive WRITE on a throwaway custom
+        dimension (analytics.readonly cannot do this)
+    One read + one write proves the two-scope set is minimal.
 
 Required env var:
   GA_DEMO_PROPERTY_ID — a GA4 property ID you own and can safely
@@ -168,7 +177,45 @@ ga-mcp-full auth status
 echo ""
 sleep 2
 
-echo "$ # tool call: WRITE operation that requires analytics.edit"
+echo "$ # tool call 1/2: READ operation that requires analytics.readonly"
+echo "$ # (analytics.edit alone CANNOT call the GA4 Data API)"
+echo "$ python3 -c 'run_report(sessions by date, last 7 days)'"
+sleep 1
+
+# READ demo: run_report exercises the analytics.readonly scope and
+# returns real data, which reads as genuine app functionality to the
+# reviewer. stderr is kept separate (see the WRITE block below for why).
+GA_DEMO_PROPERTY_ID="${GA_DEMO_PROPERTY_ID}" python3 - <<'PY'
+import asyncio
+import os
+from ga_mcp.tools.reporting.core import run_report
+
+PROPERTY_ID = os.environ["GA_DEMO_PROPERTY_ID"]
+
+async def main():
+    print(f"  [read]      run_report on property {PROPERTY_ID} "
+          f"(sessions by date, last 7 days)...")
+    result = await run_report(
+        property_id=PROPERTY_ID,
+        date_ranges=[{"start_date": "7daysAgo", "end_date": "today"}],
+        dimensions=["date"],
+        metrics=["sessions"],
+    )
+    rows = result.get("rows", []) if isinstance(result, dict) else []
+    print(f"  [ok]        run_report returned {len(rows)} row(s) of GA4 data")
+    for row in rows[:7]:
+        dims = [d.get("value") for d in row.get("dimension_values", [])]
+        mets = [m.get("value") for m in row.get("metric_values", [])]
+        print(f"              date={dims} sessions={mets}")
+    print(f"\n  [scope: analytics.readonly · Data API run_report]")
+
+asyncio.run(main())
+PY
+
+echo ""
+sleep 2
+
+echo "$ # tool call 2/2: WRITE operation that requires analytics.edit"
 echo "$ # (analytics.readonly cannot do this — proves the scope is minimal)"
 echo "$ python3 -c 'create_custom_dimension(...) ; archive_custom_dimension(...)'"
 sleep 1
